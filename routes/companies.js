@@ -7,3 +7,5 @@ router.get("/", (req, res, next) => {
     res.status(200).type("application/json").send(JSON.stringify(response));
   });
 });
+
+module.exports = router;

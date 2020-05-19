@@ -19,10 +19,22 @@ async function getCompanies() {
   await page.goto("https://gpwtrader.pl/quotes/shares");
 
   let header = await page.evaluate(() => {
-    return $(".universal-table > thead > tr")[0]
-      .textContent.replace(/\s{2,}/g, "-")
-      .split("-")
-      .filter((word) => word);
+    return Array.from($(".universal-table > thead > tr")[0].children).map(
+      (tr) => {
+        if ($("table", tr).length != 0) {
+          let name = tr.childNodes[0].textContent
+            .replace(/\s{2,}/g, "-")
+            .split("-")
+            .filter((word) => word);
+          let content = Array.from($("tr >", tr)).map((td) => td.textContent);
+          let obj = new Object();
+          obj[name] = content;
+          return obj;
+        } else {
+          return tr.textContent.replace(/\n|\s{2,}/g, "");
+        }
+      }
+    );
   });
   let companies = await page.evaluate(() => {
     return $(".universal-table > tbody > tr")

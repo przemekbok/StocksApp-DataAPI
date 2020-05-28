@@ -1,9 +1,9 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
-const headerSchema = new Schema({
+const sharesHeaderSchema = new Schema({
   name: { type: String, unique: true },
   fields: Array,
 });
 
-module.exports = mongoose.model("Header", headerSchema);
+module.exports = mongoose.model("ShareHeader", sharesHeaderSchema);

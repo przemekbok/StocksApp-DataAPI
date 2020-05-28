@@ -9,6 +9,7 @@ var cors = require("cors");
 var indexRouter = require("./routes/index");
 var companiesRouter = require("./routes/companies");
 var headersRouter = require("./routes/headers");
+var sharesRoute = require("./routes/boughtShares");
 
 var app = express();
 
@@ -26,6 +27,7 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use("/", indexRouter);
 app.use("/companies", companiesRouter);
 app.use("/headers", headersRouter);
+app.use("/shares", sharesRoute);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

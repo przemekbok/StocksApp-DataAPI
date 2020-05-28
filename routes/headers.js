@@ -6,8 +6,12 @@ router.get("/", (req, res, next) => {
   let database = new Database();
   database.connectToDatabase();
   if (req.query.header) {
-    if (req.query.header == "companies") {
+    if (req.query.header === "companies") {
       database.getHeader().then((response) => {
+        res.status(200).type("application/json").send(JSON.stringify(response));
+      });
+    } else if (req.query.header === "shares") {
+      database.getSharesHeader().then((response) => {
         res.status(200).type("application/json").send(JSON.stringify(response));
       });
     } else {

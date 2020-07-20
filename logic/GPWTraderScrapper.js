@@ -1,5 +1,7 @@
 const puppeteer = require("puppeteer");
 
+var runningBrowsers = {};
+
 async function initiateGPWTrader(browser) {
   const page = await browser.newPage();
   await page.setUserAgent(
@@ -91,6 +93,84 @@ async function getBoughtShares() {
     return { header, shares };
   });
   return response;
+}
+
+async function performAction(action, data) {
+  const browser = await puppeteer.launch({ headless: true });
+  initiateGPWTrader(browser).then(async (page) => {
+    await page.goto("https://gpwtrader.pl/quotes/shares");
+
+    await page.evaluate(
+      ({ action, data }) => {
+        Array.from($("tbody > tr[data-isin] > td > span"))
+          .filter((span) => span.innerText == data.companyName)
+          .forEach((span) => $("a", span.parentNode).click());
+
+        if (action == "buy") {
+          $(".button.buy").click();
+        } else if (action == "sell") {
+          $(".button.sell").click();
+        }
+      },
+      { action, data }
+    );
+    //wait for load of buy/sell form
+    await page.waitForNavigation();
+
+    await page.evaluate(
+      ({ action, data }) => {
+        let companyName = data.companyName.toUpperCase();
+        let volume = data.volume.toUpperCase();
+        let type = data.type.toUpperCase();
+        let validity = data.validity.toUpperCase();
+        $(`[id='isin'] > option:contains(${companyName})`).prop(
+          "selected",
+          true
+        );
+        $(`[id='wolumen']`).val(volume);
+        $(`[id='type'] > option:contains(${type})`).prop("selected", true);
+        $(`[id='validity'] > option:contains(${validity})`).prop(
+          "selected",
+          true
+        );
+
+        if (type === "LIMIT" || type === "STOP_LIMIT") {
+          $(`[id='limit']`).val(data.limit);
+        } else if (type === "STOP_LIMIT" || type === "STOP_lOSS") {
+          $(`[id='activationLevel']`).val(data.activationLevel);
+        }
+
+        if (validity === "WDC" || validity === "WDD") {
+          $(`[id='validityTime']`).val(data.validityTime);
+        }
+
+        $("[id='submit-exchange-order-form']").click();
+      },
+      { action, data }
+    );
+
+    //wait for load of confirm form
+    await page.waitForNavigation();
+  });
+
+  runningBrowsers[data.token] = browser;
+}
+
+async function submitOrder(token) {
+  const browser = runningBrowsers[token];
+  //get page with confirm form
+  const page = (await browser.pages())[0];
+  await page.evaluate(() => {
+    $(".button-zlecenie").click();
+  });
+  await page.waitForNavigation();
+  let isSubmitted = await page.evaluate(() => {
+    let response = $(".nazwa-instrumentu1").last()[0].innerText;
+    if (response == "Złożone") {
+      return true;
+    }
+    return false;
+  });
 }
 
 exports.getCompanies = getCompanies;

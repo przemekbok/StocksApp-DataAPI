@@ -17,6 +17,18 @@ async function initiateGPWTrader(browser) {
   });
   await page.waitForNavigation();
 
+  //evaluate account status data fetch
+  await page.evaluate(() => {
+    let resources = document.querySelector(".resources > p").innerText;
+    let wallet = document.querySelector(".wallet > p").innerText;
+    let rate = document.querySelector(".rate > p").innerText;
+    return {
+      resources,
+      wallet,
+      rate,
+    };
+  });
+
   return page;
 }
 
@@ -172,6 +184,8 @@ async function submitOrder(token) {
     return false;
   });
 }
+
+function getStats() {}
 
 exports.getCompanies = getCompanies;
 exports.getBoughtShares = getBoughtShares;

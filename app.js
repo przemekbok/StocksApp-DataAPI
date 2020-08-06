@@ -10,12 +10,13 @@ var indexRouter = require("./routes/index");
 var companiesRouter = require("./routes/companies");
 var headersRouter = require("./routes/headers");
 var sharesRoute = require("./routes/boughtShares");
+const credentialsRoute = require("./routes/credentials");
 
 var app = express();
 
 // view engine setup
-//app.set("views", path.join(__dirname, "views"));
-//app.set("view engine", "jade");
+app.set("views", path.join(__dirname, "views"));
+app.set("view engine", "jade");
 
 app.use(cors());
 app.use(logger("dev"));
@@ -28,6 +29,7 @@ app.use("/", indexRouter);
 app.use("/companies", companiesRouter);
 app.use("/headers", headersRouter);
 app.use("/shares", sharesRoute);
+app.use("/credentials", credentialsRoute);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

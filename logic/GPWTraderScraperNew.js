@@ -1,6 +1,7 @@
 const puppeteer = require("puppeteer");
 const JWT = require("jsonwebtoken");
 const AccessGPWTCredentials = require("../database/AccessGPWTCredentials");
+const credentialsDB = new AccessGPWTCredentials();
 
 /**
  * on init:
@@ -9,7 +10,7 @@ const AccessGPWTCredentials = require("../database/AccessGPWTCredentials");
  * on request get token, check if token is valid, get data to login and do action
  */
 
-export default class GPWTScrapper {
+class GPWTScrapper {
   #browser;
   #page;
   #lastUser = {
@@ -17,46 +18,86 @@ export default class GPWTScrapper {
     status: {},
   };
   constructor() {
-    this.#browser = openBrowser();
-    this.#page = openPage(this.#browser);
+    this.initializeBrowserAndPage();
   }
 
-  performAction(actionName,token) {
+  initializeBrowserAndPage() {
+    this.#openBrowser().then((browser) => {
+      this.#browser = browser;
+      this.#openPage().then((page) => {
+        this.#page = page;
+      });
+    });
+  }
+
+  async performAction(actionName, token) {
     let userId = getUserIdFromToken(token);
-    if (this.#lastUser.userId == null || this.#lastUser.userId != userId) {
-        if(this.#lastUser.userId != userId && !isNaN(userId)){
-            await this.#page.evaluate(() => {
-                document.querySelector("#login").value = credentials.login;
-                document.querySelector("#password").value = credentials.password;
-                document.querySelector(".signin-btn").click();
-              });
-        }
+    //check if there was a previous user
+    if (this.#lastUser.userId != userId && this.#lastUser.userId != null) {
+      //if were - logout
+      this.logOut();
+    }
+    //check if there was a previous user, we are assuming that if he were then he is logged out
+    if (this.#lastUser.userId != userId) {
+      //if were - log in
       let credentials = await getCredentialsFromDB(userId);
       await this.logIn(credentials);
+      //after succesful login write down current user id and his account status
       this.#lastUser.userId = userId;
-      this.#lastUser.status = await getAccountStatus();
+      this.#lastUser.status = await this.#scrapAccountStatus();
     }
-    await chooseAction(actionName);
+    let result = await this.#performActualAction(actionName);
+  }
+
+  async testCredentials(credentials) {
+    console.log(credentials);
+    let result = await this.logIn(credentials);
+    if (result) {
+      await this.logOut();
+    }
+    return result;
   }
 
   async logIn(credentials) {
     await this.#page.goto("https://gpwtrader.pl/");
     await this.#page.click(".zaloguj");
 
-    await this.#page.evaluate(() => {
+    let result = await this.#page.evaluate((credentials) => {
       document.querySelector("#login").value = credentials.login;
       document.querySelector("#password").value = credentials.password;
       document.querySelector(".signin-btn").click();
-    });
-    await this.#page.waitForNavigation();
+      var errorText = document.querySelector(".errors").textContent;
+      if (errorText === "") {
+        return false;
+      } else {
+        return true;
+      }
+    }, credentials);
+    if (result) {
+      await this.#page.waitForNavigation();
+    }
+    return result;
   }
 
-  async getAccountStatus() {
-    //evaluate account status data fetch
+  async logOut() {
+    await this.#page.goto("https://gpwtrader.pl/");
+    await this.#page.click(".logout > a");
+  }
+
+  /**
+   * Gets status parameters from current page, we're assuming that user is logged in and on main page
+   * Parameters that we're scrapping:
+   * account cash balance - resources
+   * cash ballance + current portfolio priced out - wallet
+   * percentage of profit/loss - rate
+   */
+  #scrapAccountStatus = async () => {
+    //we're logged in and on https://gpwtrader.pl/
     let status = await this.#page.evaluate(() => {
       let resources = document.querySelector(".resources > p").innerText;
       let wallet = document.querySelector(".wallet > p").innerText;
       let rate = document.querySelector(".rate > p").innerText;
+      //TODO - percentage is neutral - indicator needs to be added
       return {
         resources,
         wallet,
@@ -64,20 +105,20 @@ export default class GPWTScrapper {
       };
     });
     return status;
-  }
+  };
 
-  async chooseAction(actionName){
-    switch(actionName){
-        case "GET-COMPANIES":
-            return await this.getCompanies(); 
-        case "GET-BOUGHT-SHARES":
-            return await this.getBoughtShares();
-        default:
-            console.log("This action is not supported!")
+  #performActualAction = async (actionName) => {
+    switch (actionName) {
+      case "GET-COMPANIES":
+        return await this.#scrapCompanies();
+      case "GET-BOUGHT-SHARES":
+        return await this.#scrapUserBoughtShares();
+      default:
+        console.log("This action is not supported!");
     }
-  }
+  };
 
-  async getCompanies(){
+  #scrapCompanies = async () => {
     await this.#page.goto("https://gpwtrader.pl/quotes/shares");
     await this.#page.waitForNavigation();
 
@@ -117,9 +158,9 @@ export default class GPWTScrapper {
     });
 
     return { header, companies };
-  }
+  };
 
-  async getBoughtShares(){
+  #scrapUserBoughtShares = async () => {
     await this.#page.goto("https://gpwtrader.pl/account");
 
     let header = await this.#page.evaluate(() => {
@@ -145,21 +186,34 @@ export default class GPWTScrapper {
     });
 
     return { header, shares };
-  }
-}
+  };
 
-async function openBrowser() {
-  const browser = await puppeteer.launch({ headless: true });
-  return browser;
-}
+  //TODO rethink this getter, kinda pointless if
+  #getAccountStatus = () => {
+    if (this.#lastUser.userId != null) {
+      return this.#lastUser.status;
+    } else {
+      return {
+        resources: 0,
+        wallet: 0,
+        rate: "0%",
+      };
+    }
+  };
 
-async function openPage() {
-  const page = await this.#browser.newPage();
-  await page.setUserAgent(
-    "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:75.0) Gecko/20100101 Firefox/75.0"
-  );
+  #openBrowser = async () => {
+    const browser = await puppeteer.launch({ headless: true });
+    return browser;
+  };
 
-  return page;
+  #openPage = async () => {
+    const page = await this.#browser.newPage();
+    await page.setUserAgent(
+      "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:75.0) Gecko/20100101 Firefox/75.0"
+    );
+
+    return page;
+  };
 }
 
 function getUserIdFromToken(token) {
@@ -171,12 +225,14 @@ function getUserIdFromToken(token) {
     console.log(error);
   }
   //get user id
-  let userId = decodedToken.payload.sub;
+  let userId = decodedToken.sub;
   return userId;
 }
 
-async function getCredentialsFromDB(useId) {
+async function getCredentialsFromDB(userId) {
   //get credentials for GPWTrader from database
-  let credentials = AccessGPWTCredentials.getCredentials(useId);
+  let credentials = credentialsDB.getCredentials(userId);
   return credentials;
 }
+
+module.exports = { GPWTScrapper, getUserIdFromToken, getCredentialsFromDB };

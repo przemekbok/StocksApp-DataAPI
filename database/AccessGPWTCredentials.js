@@ -1,27 +1,41 @@
 const mongoose = require("mongoose");
-const CredentialsModel = require("../models/GPWTCredentials");
+const CredentialsModel = require("../models/User/GPWTCredentials");
 
 const url = "mongodb://127.0.0.1:27017/gpwtrader";
 
-mongoose.connect(url, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  useFindAndModify: false,
-});
+class GPWCredentials {
+  constructor() {
+    mongoose.connect(url, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      useFindAndModify: false,
+    });
 
-const db = mongoose.connection;
+    const db = mongoose.connection;
+    db.once("open", () => {
+      console.log("Database connected:", url);
+    });
 
-/**
- * This is foundation for package
- * Add, update and get functions needed
- */
+    db.on("error", (err) => {
+      console.error("connection error:", err);
+    });
+  }
 
-export async function addCredentials(data) {
-  let credentials = new CredentialsModel(data);
-  credentials.save();
+  /**
+   * This is foundation for package
+   * Add, update and get functions needed
+   */
+
+  async setCredentials(data) {
+    let credentials = new CredentialsModel(data);
+    await credentials.save();
+  }
+
+  async getCredentials(userId) {
+    let credentials = await CredentialsModel.find({ userId });
+    let { email, password } = credentials[0];
+    return { email, password };
+  }
 }
 
-export async function getCredentials(userId) {
-  let credentials = await CredentialsModel.find({ userId });
-  return credentials;
-}
+module.exports = GPWCredentials;

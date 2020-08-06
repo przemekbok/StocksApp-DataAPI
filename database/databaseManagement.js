@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const url = "mongodb://127.0.0.1:27017/gpwtrader";
 const GPWTrader = require("../logic/GPWTraderScrapper");
+const GPWTraderScrapper = require("../logic/GPWTraderScraperNew");
 
 const Company = require("../models/AllCompanies/Company");
 const CompanyHeader = require("../models/AllCompanies/CompanyHeader");
@@ -8,6 +9,9 @@ const CompanyHeader = require("../models/AllCompanies/CompanyHeader");
 const Share = require("../models/BoughtShares/Share");
 const ShareHeader = require("../models/BoughtShares/ShareHeader");
 
+/**
+ * class that packs all actions that are needed to operate GWPTrader data
+ */
 class Database {
   connectToDatabase() {
     mongoose.connect(url, {
@@ -26,6 +30,7 @@ class Database {
     });
   }
 
+  //collection init for companies
   initiateCompanyCollection() {
     GPWTrader.getCompanies().then((response) => {
       let header = { name: "companies", fields: response.header };
@@ -46,6 +51,27 @@ class Database {
     });
   }
 
+  initiateCompanyCollectionNew() {
+    GPWTraderScrapper.scrapCompanies().then((response) => {
+      let header = { name: "companies", fields: response.header };
+      saveCompanyHeader(header).catch((err) => {
+        console.log(err);
+      });
+      response.companies.forEach((company) => {
+        let data = Object.values(company)[0];
+        let companyScheme = {
+          name: data[0],
+          isin: Object.keys(company)[0],
+          params: data.slice(1),
+        };
+        saveCompany(companyScheme).catch((err) => {
+          console.log(err);
+        });
+      });
+    });
+  }
+
+  //collection init for bouht shares
   initiateBoughtSharesCollection() {
     GPWTrader.getBoughtShares().then((response) => {
       let header = { name: "shares", fields: response.header };

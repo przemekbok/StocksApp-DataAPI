@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const Database = require("../database/databaseManagementNew");
+const { Database } = require("../database/Database");
 
 router.get("/", (req, res, next) => {
   if (req.query.header) {

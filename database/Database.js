@@ -1,8 +1,6 @@
 //MONGOOSE
 const mongoose = require("mongoose");
-const { GPWTScrapper } = require("../logic/GPWTraderScraperNew");
-const getUserIdFromToken = require("../logic/GPWTraderScraperNew")
-  .getUserIdFromToken;
+const { GPWTScrapper, getUserIdFromToken } = require("../logic/Scrapper");
 
 //MODELS
 const Company = require("../models/AllCompanies/Company");
@@ -12,7 +10,7 @@ const CompanyHeader = require("../models/AllCompanies/CompanyHeader");
 const ShareHeader = require("../models/BoughtShares/ShareHeader");
 const UserShares = require("../models/User/UserShares");
 
-const CredentialsModel = require("../models/User/GPWTCredentials");
+const CredentialsModel = require("../models/User/UserGPWTCredentials");
 
 class Database {
   static connectToDatabase(url) {
@@ -59,7 +57,6 @@ class Database {
     return new Promise(async (resolve, reject) => {
       GPWTScrapper.performAction("GET-BOUGHT-SHARES", token).then(
         (response) => {
-          console.log("\nResponse:", response, "\n");
           let header = { name: "shares", fields: response.header };
           this.saveBoughtSharesHeader(header).catch((err) => {
             reject(err);
@@ -69,8 +66,7 @@ class Database {
           response.shares.forEach((share) => {
             let data = Object.values(share)[0]; // {isin:data} model
             let shareScheme = {
-              name: data[0],
-              isin: Object.keys(share)[0],
+              name: Object.keys(share)[0],
               params: data.slice(1), //cut down the name of company, data[0], from the rest of data
             };
             shares.push(shareScheme);
@@ -127,12 +123,13 @@ class Database {
     let userId = getUserIdFromToken(token);
     let userShares = await UserShares.find({ userId });
     if (userShares.length === 0) {
-      await this.updateUserBoughtSharesCollection(token).then((response) =>
-        console.log(response)
-      );
-      return await UserShares.find({ userId });
+      await this.updateUserBoughtSharesCollection(token).then((response) => {
+        console.log(response); //looking for response - update performed
+        //Bought shares are updated inside
+      });
+      return await UserShares.find({ userId })[0];
     } else {
-      return userShares;
+      return userShares[0];
     }
   }
 
@@ -152,20 +149,20 @@ class Database {
     );
   }
   //----------------------
-
-  Credentials;
-  //----------------------
-  static async setCredentials(data) {
-    let credentials = new CredentialsModel(data);
-    await credentials.save();
-  }
-
-  static async getCredentials(userId) {
-    let credentials = await CredentialsModel.find({ userId });
-    let { email, password } = credentials[0];
-    return { email, password };
-  }
-  //----------------------
 }
 
-module.exports = Database;
+//Credentials
+//----------------------
+async function setCredentials(data) {
+  let credentials = new CredentialsModel(data);
+  await credentials.save();
+}
+
+async function getCredentials(userId) {
+  let credentials = await CredentialsModel.find({ userId });
+  let { email, password } = credentials[0];
+  return { email, password };
+}
+//----------------------
+
+module.exports = { Database, setCredentials, getCredentials };

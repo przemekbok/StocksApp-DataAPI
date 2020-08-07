@@ -1,14 +1,15 @@
 const express = require("express");
 const router = express.Router();
-const Database = require("../database/databaseManagementNew");
 const {
-  getUserIdFromToken,
-  GPWTScrapper,
-} = require("../logic/GPWTraderScraperNew");
+  Database,
+  getCredentials,
+  setCredentials,
+} = require("../database/Database");
+const { getUserIdFromToken, GPWTScrapper } = require("../logic/Scrapper");
 
 router.get("/get", (req, res, next) => {
   let userId = getUserIdFromToken(req.header("Authorization"));
-  Database.getCredentials(userId).then((response) => {
+  getCredentials(userId).then((response) => {
     res.status(200).type("application/json").send(JSON.stringify(response));
   });
 });
@@ -19,7 +20,7 @@ router.post("/set", (req, res, next) => {
   let credentails = { userId, email, password };
   GPWTScrapper.testCredentials({ email, password }).then((result) => {
     if (result) {
-      Database.setCredentials(credentails)
+      setCredentials(credentails)
         .then((response) => {
           res
             .status(200)
@@ -32,8 +33,8 @@ router.post("/set", (req, res, next) => {
     } else {
     }
   });
-
-  Database.setCredentials(credentails).then((response) => {
+  //?
+  setCredentials(credentails).then((response) => {
     res.status(200).type("application/json").send(JSON.stringify(response));
   });
 });

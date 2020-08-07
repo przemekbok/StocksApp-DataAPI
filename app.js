@@ -1,24 +1,24 @@
-var createError = require("http-errors");
-var express = require("express");
-var path = require("path");
-var cookieParser = require("cookie-parser");
-var logger = require("morgan");
+const createError = require("http-errors");
+const express = require("express");
+const path = require("path");
+const cookieParser = require("cookie-parser");
+const logger = require("morgan");
 const puppeteer = require("puppeteer");
 
-var cors = require("cors");
+const cors = require("cors");
 
-const Database = require("./database/databaseManagementNew");
-const { GPWTScrapper } = require("./logic/GPWTraderScraperNew");
+const { Database } = require("./database/Database");
+const { GPWTScrapper } = require("./logic/Scrapper");
 
-var indexRouter = require("./routes/index");
-var companiesRouter = require("./routes/companies");
-var headersRouter = require("./routes/headers");
-var sharesRoute = require("./routes/boughtShares");
+const indexRouter = require("./routes/index");
+const companiesRouter = require("./routes/companies");
+const headersRouter = require("./routes/headers");
+const sharesRoute = require("./routes/boughtShares");
 const credentialsRoute = require("./routes/credentials");
 
 //SETUP
 Database.connectToDatabase("mongodb://127.0.0.1:27017/gpwtrader");
-puppeteer.launch({ headless: false }).then((browser) => {
+puppeteer.launch({ headless: true }).then((browser) => {
   GPWTScrapper.setDefaultBrowser(browser);
 });
 //GLOBAL VARIABLES

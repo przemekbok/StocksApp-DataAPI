@@ -1,6 +1,6 @@
 const puppeteer = require("puppeteer");
 const JWT = require("jsonwebtoken");
-const Database = require("../database/databaseManagementNew");
+const CredentialsModel = require("../models/User/UserGPWTCredentials");
 
 /**
  * on init:
@@ -30,7 +30,7 @@ class GPWTScrapper {
         //check if there was a previous user, we are assuming that if he were then he is logged out
         if (this.#lastUser.userId != userId) {
           //if were - log in
-          let credentials = await getCredentialsFromDB(userId);
+          let credentials = await this.#getCredentials(userId);
           let result = await this.#logIn(credentials);
           //after succesful login write down current user id and his account status
           this.#lastUser.userId = userId;
@@ -119,7 +119,6 @@ class GPWTScrapper {
   };
 
   static #performActualAction = async (actionName) => {
-    console.log("\nWe're here!\n");
     switch (actionName) {
       case "GET-COMPANIES":
         return await this.#scrapCompanies();
@@ -196,7 +195,6 @@ class GPWTScrapper {
           return obj;
         });
     });
-    console.log("\nHeader", header, "\n");
     return { header, shares };
   };
 
@@ -227,6 +225,12 @@ class GPWTScrapper {
 
     return page;
   };
+
+  static #getCredentials = async (userId) => {
+    let credentials = await CredentialsModel.find({ userId });
+    let { email, password } = credentials[0];
+    return { email, password };
+  };
 }
 
 function getUserIdFromToken(token) {
@@ -242,10 +246,4 @@ function getUserIdFromToken(token) {
   return userId;
 }
 
-async function getCredentialsFromDB(userId) {
-  //get credentials for GPWTrader from database
-  let credentials = Database.getCredentials(userId);
-  return credentials;
-}
-
-module.exports = { GPWTScrapper, getUserIdFromToken, getCredentialsFromDB };
+module.exports = { GPWTScrapper, getUserIdFromToken };

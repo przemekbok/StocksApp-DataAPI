@@ -10,29 +10,19 @@ const cors = require("cors");
 const { Database } = require("./database/Database");
 const { GPWTScrapper } = require("./logic/Scrapper");
 
-const indexRouter = require("./routes/index");
 const companiesRouter = require("./routes/companies");
 const headersRouter = require("./routes/headers");
 const sharesRoute = require("./routes/boughtShares");
 const credentialsRoute = require("./routes/credentials");
+const updateRoute = require("./routes/update");
 
 //SETUP
 Database.connectToDatabase("mongodb://127.0.0.1:27017/gpwtrader");
 puppeteer.launch({ headless: true }).then((browser) => {
   GPWTScrapper.setDefaultBrowser(browser);
 });
-//GLOBAL VARIABLES
-/**TODO: Global object in Scraper, then set scrapper here
- * Also: Link moongoose here
- */
-
-//----------------
 
 var app = express();
-
-// view engine setup
-app.set("views", path.join(__dirname, "views"));
-app.set("view engine", "jade");
 
 app.use(cors());
 app.use(logger("dev"));
@@ -41,11 +31,11 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
-app.use("/", indexRouter);
 app.use("/companies", companiesRouter);
 app.use("/headers", headersRouter);
 app.use("/shares", sharesRoute);
 app.use("/credentials", credentialsRoute);
+app.use("/update", updateRoute);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

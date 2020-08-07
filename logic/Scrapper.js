@@ -39,6 +39,7 @@ class GPWTScrapper {
           }
         }
         let result = await this.#performActualAction(actionName);
+        this.#page.close();
         return result;
       } catch (err) {
         console.log("\nError:\n", err);
@@ -70,7 +71,9 @@ class GPWTScrapper {
 
   static #logIn = async (credentials) => {
     this.#page = await this.#openPage();
-    await this.#page.goto("https://gpwtrader.pl/?showlogin=true");
+    await this.#page.goto("https://gpwtrader.pl/?showlogin=true", {
+      waitUntil: "domcontentloaded",
+    });
     //await this.#page.click(".zaloguj");
     //await this.#page.waitForNavigation();
     let result = await this.#page.evaluate((credentials) => {

@@ -31,54 +31,39 @@ class Database {
   }
 
   static async updateCompaniesCollection(token) {
-    return new Promise(async (resolve, reject) => {
-      GPWTScrapper.performAction("GET-COMPANIES", token).then((response) => {
-        let header = { name: "companies", fields: response.header };
-        saveCompanyHeader(header).catch((err) => {
-          reject(err);
-        });
-        response.companies.forEach((company) => {
-          let data = Object.values(company)[0];
-          let companyScheme = {
-            name: data[0],
-            isin: Object.keys(company)[0],
-            params: data.slice(1),
-          };
-          updateCompany(companyScheme).catch((err) => {
-            reject(err);
-          });
-        });
-        resolve("Update has been performed");
-      });
+    let response = await GPWTScrapper.performAction("GET-COMPANIES", token);
+    let header = { name: "companies", fields: response.header };
+    await saveCompanyHeader(header);
+    response.companies.forEach(async (company) => {
+      let data = Object.values(company)[0];
+      let companyScheme = {
+        name: data[0],
+        isin: Object.keys(company)[0],
+        params: data.slice(1),
+      };
+      await updateCompany(companyScheme);
     });
+    return "List of companies has been updated!";
   }
 
   static async updateUserBoughtSharesCollection(token) {
-    return new Promise(async (resolve, reject) => {
-      GPWTScrapper.performAction("GET-BOUGHT-SHARES", token).then(
-        (response) => {
-          let header = { name: "shares", fields: response.header };
-          this.saveBoughtSharesHeader(header).catch((err) => {
-            reject(err);
-          });
-          let userId = getUserIdFromToken(token);
-          let shares = [];
-          response.shares.forEach((share) => {
-            let data = Object.values(share)[0]; // {isin:data} model
-            let shareScheme = {
-              name: Object.keys(share)[0],
-              params: data.slice(1), //cut down the name of company, data[0], from the rest of data
-            };
-            shares.push(shareScheme);
-          });
-          let userSharesScheme = { userId, shares };
-          this.saveUserBoughtShares(userSharesScheme).catch((err) => {
-            reject(err);
-          });
-          resolve("Update has been performed");
-        }
-      );
+    let response = await GPWTScrapper.performAction("GET-BOUGHT-SHARES", token);
+    let fields = response.header.filter((label) => label != response.header[1]);
+    let header = { name: "shares", fields };
+    await this.saveBoughtSharesHeader(header);
+    let userId = await getUserIdFromToken(token);
+    let shares = [];
+    response.shares.forEach((share) => {
+      let data = Object.values(share)[0]; // {isin:data} model
+      let shareScheme = {
+        name: Object.keys(share)[0],
+        params: data.slice(1), //cut down the name of company, data[0], from the rest of data
+      };
+      shares.push(shareScheme);
     });
+    let userSharesScheme = { userId, shares };
+    await this.saveUserBoughtShares(userSharesScheme);
+    return "List of user's bought shares has been updated!";
   }
 
   //Companies
@@ -142,11 +127,9 @@ class Database {
     return await ShareHeader.find();
   }
 
-  static async saveBoughtSharesHeader() {
-    await CompanyHeader.findOneAndUpdate(
-      { name: header.name },
-      { fields: header.fields }
-    );
+  static async saveBoughtSharesHeader(header) {
+    const userSharesHeaderScheme = new ShareHeader(header);
+    await userSharesHeaderScheme.save();
   }
   //----------------------
 }

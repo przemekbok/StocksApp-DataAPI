@@ -1,18 +1,14 @@
 const express = require("express");
 const router = express.Router();
-const Database = require("../database/databaseManagement");
+const Database = require("../database/databaseManagementNew");
 const {
   getUserIdFromToken,
   GPWTScrapper,
 } = require("../logic/GPWTraderScraperNew");
-const GPWCredentials = require("../database/AccessGPWTCredentials");
-
-const credentialsAccess = new GPWCredentials();
-const scrapper = new GPWTScrapper();
 
 router.get("/get", (req, res, next) => {
   let userId = getUserIdFromToken(req.header("Authorization"));
-  credentialsAccess.getCredentials(userId).then((response) => {
+  Database.getCredentials(userId).then((response) => {
     res.status(200).type("application/json").send(JSON.stringify(response));
   });
 });
@@ -21,10 +17,9 @@ router.post("/set", (req, res, next) => {
   let userId = getUserIdFromToken(req.header("Authorization"));
   let { email, password } = req.body;
   let credentails = { userId, email, password };
-  scrapper.testCredentials({ email, password }).then((result) => {
+  GPWTScrapper.testCredentials({ email, password }).then((result) => {
     if (result) {
-      credentialsAccess
-        .setCredentials(credentails)
+      Database.setCredentials(credentails)
         .then((response) => {
           res
             .status(200)
@@ -38,7 +33,7 @@ router.post("/set", (req, res, next) => {
     }
   });
 
-  credentialsAccess.setCredentials(credentails).then((response) => {
+  Database.setCredentials(credentails).then((response) => {
     res.status(200).type("application/json").send(JSON.stringify(response));
   });
 });

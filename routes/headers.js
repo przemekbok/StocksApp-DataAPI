@@ -1,17 +1,15 @@
 const express = require("express");
 const router = express.Router();
-const Database = require("../database/databaseManagement");
+const Database = require("../database/databaseManagementNew");
 
 router.get("/", (req, res, next) => {
-  let database = new Database();
-  database.connectToDatabase();
   if (req.query.header) {
     if (req.query.header === "companies") {
-      database.getHeader().then((response) => {
+      Database.getCompanyHeader().then((response) => {
         res.status(200).type("application/json").send(JSON.stringify(response));
       });
     } else if (req.query.header === "shares") {
-      database.getSharesHeader().then((response) => {
+      Database.getUserBoughtSharesHeader().then((response) => {
         res.status(200).type("application/json").send(JSON.stringify(response));
       });
     } else {

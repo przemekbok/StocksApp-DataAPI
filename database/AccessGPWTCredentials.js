@@ -13,18 +13,13 @@ class GPWCredentials {
 
     const db = mongoose.connection;
     db.once("open", () => {
-      console.log("Database connected:", url);
+      console.log("CREDENTIALS!Database connected:", url);
     });
 
     db.on("error", (err) => {
       console.error("connection error:", err);
     });
   }
-
-  /**
-   * This is foundation for package
-   * Add, update and get functions needed
-   */
 
   async setCredentials(data) {
     let credentials = new CredentialsModel(data);

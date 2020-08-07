@@ -3,14 +3,30 @@ var express = require("express");
 var path = require("path");
 var cookieParser = require("cookie-parser");
 var logger = require("morgan");
+const puppeteer = require("puppeteer");
 
 var cors = require("cors");
+
+const Database = require("./database/databaseManagementNew");
+const { GPWTScrapper } = require("./logic/GPWTraderScraperNew");
 
 var indexRouter = require("./routes/index");
 var companiesRouter = require("./routes/companies");
 var headersRouter = require("./routes/headers");
 var sharesRoute = require("./routes/boughtShares");
 const credentialsRoute = require("./routes/credentials");
+
+//SETUP
+Database.connectToDatabase("mongodb://127.0.0.1:27017/gpwtrader");
+puppeteer.launch({ headless: false }).then((browser) => {
+  GPWTScrapper.setDefaultBrowser(browser);
+});
+//GLOBAL VARIABLES
+/**TODO: Global object in Scraper, then set scrapper here
+ * Also: Link moongoose here
+ */
+
+//----------------
 
 var app = express();
 

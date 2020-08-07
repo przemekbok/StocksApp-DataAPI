@@ -1,6 +1,6 @@
 //MONGOOSE
 const mongoose = require("mongoose");
-const GPWTraderScrapper = require("../logic/GPWTraderScraperNew").GPWTScrapper;
+const { GPWTScrapper } = require("../logic/GPWTraderScraperNew");
 const getUserIdFromToken = require("../logic/GPWTraderScraperNew")
   .getUserIdFromToken;
 
@@ -34,32 +34,30 @@ class Database {
 
   static async updateCompaniesCollection(token) {
     return new Promise(async (resolve, reject) => {
-      GPWTraderScrapper.performAction("GET-COMPANIES", token).then(
-        (response) => {
-          let header = { name: "companies", fields: response.header };
-          saveCompanyHeader(header).catch((err) => {
+      GPWTScrapper.performAction("GET-COMPANIES", token).then((response) => {
+        let header = { name: "companies", fields: response.header };
+        saveCompanyHeader(header).catch((err) => {
+          reject(err);
+        });
+        response.companies.forEach((company) => {
+          let data = Object.values(company)[0];
+          let companyScheme = {
+            name: data[0],
+            isin: Object.keys(company)[0],
+            params: data.slice(1),
+          };
+          updateCompany(companyScheme).catch((err) => {
             reject(err);
           });
-          response.companies.forEach((company) => {
-            let data = Object.values(company)[0];
-            let companyScheme = {
-              name: data[0],
-              isin: Object.keys(company)[0],
-              params: data.slice(1),
-            };
-            updateCompany(companyScheme).catch((err) => {
-              reject(err);
-            });
-          });
-          resolve("Update has been performed");
-        }
-      );
+        });
+        resolve("Update has been performed");
+      });
     });
   }
 
   static async updateUserBoughtSharesCollection(token) {
     return new Promise(async (resolve, reject) => {
-      GPWTraderScrapper.performAction("GET-BOUGHT-SHARES", token).then(
+      GPWTScrapper.performAction("GET-BOUGHT-SHARES", token).then(
         (response) => {
           console.log("\nResponse:", response, "\n");
           let header = { name: "shares", fields: response.header };

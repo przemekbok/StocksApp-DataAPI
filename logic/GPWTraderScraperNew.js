@@ -1,8 +1,6 @@
 const puppeteer = require("puppeteer");
 const JWT = require("jsonwebtoken");
 const Database = require("../database/databaseManagementNew");
-// const AccessGPWTCredentials = require("../database/AccessGPWTCredentials");
-// const Database = new AccessGPWTCredentials();
 
 /**
  * on init:

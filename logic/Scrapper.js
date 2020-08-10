@@ -54,11 +54,17 @@ class GPWTScrapper {
 
   static async testCredentials(credentials) {
     if (this.#isGlobalBrowserSet) {
-      let result = await this.#logIn(credentials);
-      if (result) {
-        await this.#logOut();
+      try {
+        let result = await this.#logIn(credentials);
+        if (result) {
+          await this.#logOut();
+        }
+        this.#page.close();
+        return result;
+      } catch (err) {
+        this.#page.close();
+        return false;
       }
-      return result;
     } else {
       console.log("\nError:\n", "default browser is not set!");
     }
@@ -82,12 +88,12 @@ class GPWTScrapper {
       document.querySelector(".signin-btn").click();
       var errorText = document.querySelector(".errors").textContent;
       if (errorText === "") {
-        return false;
-      } else {
         return true;
+      } else {
+        return false;
       }
     }, credentials);
-    if (!result) {
+    if (result) {
       await this.#page.waitForNavigation();
     }
     return result;
@@ -231,7 +237,9 @@ class GPWTScrapper {
 
   static #getCredentials = async (userId) => {
     let credentials = await CredentialsModel.find({ userId });
-    let { email, password } = credentials[0];
+    credentials =
+      credentials.length > 0 ? credentials[0] : { email: "", password: "" };
+    let { email, password } = credentials;
     return { email, password };
   };
 }

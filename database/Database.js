@@ -108,10 +108,10 @@ class Database {
     let userId = getUserIdFromToken(token);
     let userShares = await UserShares.find({ userId });
     if (userShares.length === 0) {
-      await this.updateUserBoughtSharesCollection(token).then((response) => {
-        console.log(response); //looking for response - update performed
-        //Bought shares are updated inside
-      });
+      // await this.updateUserBoughtSharesCollection(token).then((response) => {
+      //   console.log(response); //looking for response - update performed
+      //   //Bought shares are updated inside
+      // });
       return await UserShares.find({ userId })[0];
     } else {
       return userShares[0];
@@ -137,13 +137,21 @@ class Database {
 //Credentials
 //----------------------
 async function setCredentials(data) {
-  let credentials = new CredentialsModel(data);
-  await credentials.save();
+  let credentials = await CredentialsModel.find({ userId: data.userId });
+  let newCredentials = new CredentialsModel(data);
+  if (credentials.length === 0) {
+    await newCredentials.save();
+    return true;
+  } else {
+    return false;
+  }
 }
 
 async function getCredentials(userId) {
   let credentials = await CredentialsModel.find({ userId });
-  let { email, password } = credentials[0];
+  credentials =
+    credentials.length > 0 ? credentials[0] : { email: "", password: "" };
+  let { email, password } = credentials;
   return { email, password };
 }
 //----------------------

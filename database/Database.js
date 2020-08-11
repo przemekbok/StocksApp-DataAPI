@@ -11,6 +11,7 @@ const ShareHeader = require("../models/BoughtShares/ShareHeader");
 const UserShares = require("../models/User/UserShares");
 
 const CredentialsModel = require("../models/User/UserGPWTCredentials");
+const UserStatus = require("../models/User/UserStatus");
 
 class Database {
   static connectToDatabase(url) {
@@ -30,30 +31,47 @@ class Database {
     });
   }
 
-  static async updateCompaniesCollection(token) {
+  static async updateAllUserRelatedData(token) {
+    let response = await GPWTScrapper.performAction("UPDATE-ALL", token);
+    await this.saveUserStatus(response.status, token);
+    await this.saveCompaniesCollection(response.companies);
+    await this.saveUserBoughtSharesCollection(response.boughtShares, token);
+  }
+
+  static async updateAllCompanies(token) {
     let response = await GPWTScrapper.performAction("GET-COMPANIES", token);
-    let header = { name: "companies", fields: response.header };
-    await saveCompanyHeader(header);
-    response.companies.forEach(async (company) => {
+    return await this.saveCompaniesCollection(response);
+  }
+
+  static async saveCompaniesCollection(collection) {
+    let header = { name: "companies", fields: collection.header };
+    await this.saveCompanyHeader(header);
+    collection.companies.forEach(async (company) => {
       let data = Object.values(company)[0];
       let companyScheme = {
         name: data[0],
         isin: Object.keys(company)[0],
         params: data.slice(1),
       };
-      await updateCompany(companyScheme);
+      await this.saveCompany(companyScheme);
     });
     return "List of companies has been updated!";
   }
 
-  static async updateUserBoughtSharesCollection(token) {
+  static async updateUserBoughtShares(token) {
     let response = await GPWTScrapper.performAction("GET-BOUGHT-SHARES", token);
-    let fields = response.header.filter((label) => label != response.header[1]);
+    return await this.saveUserBoughtSharesCollection(response, token);
+  }
+
+  static async saveUserBoughtSharesCollection(collection, token) {
+    let fields = collection.header.filter(
+      (label) => label != collection.header[1]
+    );
     let header = { name: "shares", fields };
     await this.saveBoughtSharesHeader(header);
     let userId = await getUserIdFromToken(token);
     let shares = [];
-    response.shares.forEach((share) => {
+    collection.shares.forEach((share) => {
       let data = Object.values(share)[0]; // {isin:data} model
       let shareScheme = {
         name: Object.keys(share)[0],
@@ -66,11 +84,51 @@ class Database {
     return "List of user's bought shares has been updated!";
   }
 
+  //User Status
+  //----------------------
+  static async getUserStatus(token) {
+    let userId = await getUserIdFromToken(token);
+    let userStatus = await UserStatus.findOne({ userId });
+    //sanitizing object
+    return {
+      userId: userStatus.userId,
+      resources: userStatus.resources,
+      wallet: userStatus.wallet,
+      rate: userStatus.rate,
+    };
+  }
+
+  static async saveUserStatus(status, token) {
+    let userId = await getUserIdFromToken(token);
+    let userStatus = await UserStatus.findOne();
+    if (userStatus !== null) {
+      userStatus._doc = { ...userStatus._doc, ...status };
+      await userStatus.save();
+    } else {
+      let newUserStatus = new UserStatus({ userId, ...status });
+      await newUserStatus.save();
+    }
+  }
+  //----------------------
+
   //Companies
   //----------------------
   static async getCompanies() {
     let companies = await Company.find();
     return companies;
+  }
+
+  static async saveCompany(company) {
+    const c = await Company.findOne({ name: company.name, isin: company.isin });
+    if (c !== null) {
+      c.params = company.params;
+      await c.save();
+    } else {
+      const newCompany = new Company(company);
+      await newCompany.save((err) => {
+        //TODO: weird duplicate error
+      });
+    }
   }
 
   static async getCompaniesBatch(page, size) {
@@ -81,24 +139,21 @@ class Database {
     return companies;
   }
 
-  static async saveCompany(company) {
-    const c = new Company(company);
-    await c.save();
-  }
-
-  //propably legacy
-  static async getNumberOfCompanies() {
-    return await Company.countDocuments();
-  }
-
   //Companies Header
   static async getCompanyHeader() {
-    return await CompanyHeader.find();
+    let header = await CompanyHeader.findOne();
+    return { name: header.name, fields: header.fields };
   }
 
   static async saveCompanyHeader(header) {
-    const c = new CompanyHeader(header);
-    return c.save();
+    const cHeaders = await CompanyHeader.findOne();
+    if (cHeaders !== null) {
+      cHeaders.fields = header.fields;
+      await cHeaders.save();
+    } else {
+      const companyHeader = new CompanyHeader(header);
+      await companyHeader.save();
+    }
   }
   //----------------------
 
@@ -108,10 +163,6 @@ class Database {
     let userId = getUserIdFromToken(token);
     let userShares = await UserShares.find({ userId });
     if (userShares.length === 0) {
-      // await this.updateUserBoughtSharesCollection(token).then((response) => {
-      //   console.log(response); //looking for response - update performed
-      //   //Bought shares are updated inside
-      // });
       return await UserShares.find({ userId })[0];
     } else {
       return userShares[0];
@@ -119,17 +170,30 @@ class Database {
   }
 
   static async saveUserBoughtShares(userShares) {
-    const userSharesScheme = new UserShares(userShares);
-    await userSharesScheme.save();
+    const usersShares = await UserShares.findOne({ userId: userShares.userId });
+    if (usersShares !== null) {
+      usersShares.shares = userShares.shares;
+      await usersShares.save();
+    } else {
+      const newUserShares = new UserShares(userShares);
+      await newUserShares.save();
+    }
   }
   //Bought Shares Header
   static async getUserBoughtSharesHeader() {
-    return await ShareHeader.find();
+    let header = await ShareHeader.findOne();
+    return { name: header.name, fields: header.fields };
   }
 
   static async saveBoughtSharesHeader(header) {
-    const userSharesHeaderScheme = new ShareHeader(header);
-    await userSharesHeaderScheme.save();
+    const bsHeaders = await ShareHeader.findOne();
+    if (bsHeaders !== null) {
+      bsHeaders.fields = header.fields;
+      await bsHeaders.save();
+    } else {
+      const userSharesHeader = new ShareHeader(header);
+      await userSharesHeader.save();
+    }
   }
   //----------------------
 }
@@ -137,22 +201,23 @@ class Database {
 //Credentials
 //----------------------
 async function setCredentials(data) {
-  let credentials = await CredentialsModel.find({ userId: data.userId });
-  let newCredentials = new CredentialsModel(data);
-  if (credentials.length === 0) {
-    await newCredentials.save();
-    return true;
+  let credentials = await CredentialsModel.findOne({ userId: data.userId });
+  if (credentials !== null) {
+    const { email, password } = data;
+    credentials._doc = { ...credentials._doc, email, password };
+    await credentials.save();
   } else {
-    return false;
+    let newCredentials = new CredentialsModel(data);
+    await newCredentials.save();
   }
+  return true;
 }
 
 async function getCredentials(userId) {
-  let credentials = await CredentialsModel.find({ userId });
+  let credentials = await CredentialsModel.findOne({ userId });
   credentials =
-    credentials.length > 0 ? credentials[0] : { email: "", password: "" };
-  let { email, password } = credentials;
-  return { email, password };
+    credentials !== null ? credentials : { email: "", password: "" };
+  return { email: credentials.email, password: credentials.password };
 }
 //----------------------
 

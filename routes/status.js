@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const { Database } = require("../database/Database");
-const { userSharesToJSON } = require("../logic/MongoObjToJSON");
 
 router.get("/", (req, res, next) => {
   let token = req.header("Authorization");
@@ -9,8 +8,8 @@ router.get("/", (req, res, next) => {
     let errorMessge = "Unauthorized!";
     res.status(403).send(JSON.stringify({ errorMessge }));
   } else {
-    Database.getUserBoughtShares(token).then((response) => {
-      res.status(200).type("application/json").send(userSharesToJSON(response));
+    Database.getUserStatus(token).then((response) => {
+      res.status(200).type("application/json").send(JSON.stringify(response));
     });
   }
 });

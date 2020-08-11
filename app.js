@@ -15,6 +15,7 @@ const headersRouter = require("./routes/headers");
 const sharesRoute = require("./routes/boughtShares");
 const credentialsRoute = require("./routes/credentials");
 const updateRoute = require("./routes/update");
+const userStatusRoute = require("./routes/status");
 
 //SETUP
 Database.connectToDatabase("mongodb://127.0.0.1:27017/gpwtrader");
@@ -36,6 +37,7 @@ app.use("/headers", headersRouter);
 app.use("/shares", sharesRoute);
 app.use("/credentials", credentialsRoute);
 app.use("/update", updateRoute);
+app.use("/status", userStatusRoute);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

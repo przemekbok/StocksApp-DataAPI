@@ -15,11 +15,4 @@ router.get("/", (req, res, next) => {
     });
   }
 });
-
-router.get("/number", (req, res, next) => {
-  Database.getNumberOfCompanies().then((response) => {
-    res.status(200).type("application/json").send(JSON.stringify(response));
-  });
-});
-
 module.exports = router;

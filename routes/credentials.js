@@ -11,7 +11,7 @@ router.get("/get", (req, res, next) => {
   let token = req.header("Authorization");
   let userId = token === undefined ? null : getUserIdFromToken(token);
   if (userId === null) {
-    let errorMessage = "There is no credentials hooked up to user account";
+    let errorMessage = "Unauthorized!";
     res
       .status(200)
       .type("application/json")

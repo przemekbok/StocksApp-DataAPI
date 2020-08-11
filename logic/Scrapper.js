@@ -22,23 +22,25 @@ class GPWTScrapper {
       try {
         let userId = getUserIdFromToken(token);
         //check if there was a previous user
-        if (this.#lastUser.userId != userId && this.#lastUser.userId != null) {
-          //if were - logout
-          this.#logOut();
-          this.#page.close();
-        }
+        // if (this.#lastUser.userId != userId && this.#lastUser.userId != null) {
+        //   //if were - logout
+        //   this.#logOut();
+        //   this.#page.close();
+        // }
         //check if there was a previous user, we are assuming that if he were then he is logged out
-        if (this.#lastUser.userId != userId) {
-          //if were - log in
-          let credentials = await this.#getCredentials(userId);
-          let result = await this.#logIn(credentials);
-          //after succesful login write down current user id and his account status
-          this.#lastUser.userId = userId;
-          if (result) {
-            this.#lastUser.status = await this.#scrapAccountStatus();
-          }
-        }
+        // if (this.#lastUser.userId != userId) {
+
+        // }
+        //if were - log in
+        let credentials = await this.#getCredentials(userId);
+        let loginResult = await this.#logIn(credentials);
+        //after succesful login write down current user id and his account status
+        //.#lastUser.userId = userId;
+        // if (result) {
+        //   this.#lastUser.status = await this.#scrapAccountStatus();
+        // }
         let result = await this.#performActualAction(actionName);
+        await this.#logOut();
         this.#page.close();
         return result;
       } catch (err) {
@@ -100,8 +102,28 @@ class GPWTScrapper {
   };
 
   static #logOut = async () => {
-    await this.#page.goto("https://gpwtrader.pl/");
+    //await this.#page.goto("https://gpwtrader.pl/");
     await this.#page.click(".logout > a");
+  };
+
+  static #performActualAction = async (actionName) => {
+    switch (actionName) {
+      case "GET-COMPANIES":
+        return await this.#scrapCompanies();
+      case "GET-BOUGHT-SHARES":
+        return await this.#scrapUserBoughtShares();
+      case "UPDATE-ALL":
+        return await this.#scrapAllUserRelatedData();
+      default:
+        console.log("This action is not supported!");
+    }
+  };
+
+  static #scrapAllUserRelatedData = async () => {
+    let status = await this.#scrapAccountStatus();
+    let boughtShares = await this.#scrapUserBoughtShares();
+    let companies = await this.#scrapCompanies();
+    return { status, boughtShares, companies };
   };
 
   /**
@@ -125,17 +147,6 @@ class GPWTScrapper {
       };
     });
     return status;
-  };
-
-  static #performActualAction = async (actionName) => {
-    switch (actionName) {
-      case "GET-COMPANIES":
-        return await this.#scrapCompanies();
-      case "GET-BOUGHT-SHARES":
-        return await this.#scrapUserBoughtShares();
-      default:
-        console.log("This action is not supported!");
-    }
   };
 
   static #scrapCompanies = async () => {
@@ -218,11 +229,6 @@ class GPWTScrapper {
         rate: "0%",
       };
     }
-  };
-
-  static #openBrowser = async () => {
-    const browser = await puppeteer.launch({ headless: false }); //change to true to hide window
-    return browser;
   };
 
   static #openPage = async () => {

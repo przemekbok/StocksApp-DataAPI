@@ -3,7 +3,7 @@ const Schema = mongoose.Schema;
 
 const userSharesSchema = new Schema({
   userId: { type: String, unique: true },
-  shares: [{ name: { type: String, unique: true }, params: Array }],
+  shares: [{ name: { type: String }, params: Array }],
 });
 
 module.exports = mongoose.model("UserShares", userSharesSchema);

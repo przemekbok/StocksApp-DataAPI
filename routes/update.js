@@ -11,9 +11,13 @@ router.get("/", (req, res, next) => {
   } else {
     getCredentials(userId).then((credentials) => {
       if (credentials.email === "") {
-        res.status(200).type("application/json").send();
+        let errorMessage = "Authentication failed";
+        res
+          .status(403)
+          .type("application/json")
+          .send(JSON.stringify(errorMessage));
       } else {
-        Database.updateUserBoughtSharesCollection(token).then((response) => {
+        Database.updateAllUserRelatedData(token).then(() => {
           res.status(200).type("application/json").send();
         });
       }

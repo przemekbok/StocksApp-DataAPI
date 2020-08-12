@@ -91,7 +91,7 @@ class Database {
     let userStatus = await UserStatus.findOne({ userId });
     //sanitizing object
     return {
-      userId: userStatus.userId,
+      userId: userId,
       resources: userStatus.resources,
       wallet: userStatus.wallet,
       rate: userStatus.rate,

@@ -3,7 +3,7 @@ const Schema = mongoose.Schema;
 
 const companySchema = new Schema({
   name: { type: String, unique: true },
-  isin: { type: String, unique: true },
+  isin: { type: String },
   params: Array,
 });
 

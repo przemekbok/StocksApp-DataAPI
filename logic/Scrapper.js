@@ -186,20 +186,25 @@ class GPWTScrapper {
         }
       );
     });
+    header = header.filter((text) => text != header[1]); //filter header from unnecessary ones
     let shares = await this.#page.evaluate(() => {
       return Array.from($(".derywaty-data > .universal-table > tbody > tr"))
         .filter((row) => row.childNodes.length > 5)
         .map((tr) => {
+          let isin = tr.querySelector("[data-isin]").attributes["data-isin"]
+            .value;
           let params = tr.textContent
             .replace(/\s{2,}/g, "-")
             .split("-")
             .filter((param) => param);
-
-          let obj = {};
-          obj[params[0]] = params.slice(1);
-          return obj;
+          let name = params[0];
+          params = params.slice(2); //filter from unnecessary name and params
+          return { name, isin, params };
         });
     });
+    if (shares[0].params.length < 6) {
+      header = header.filter((text) => text != header[3]);
+    }
     return { header, shares };
   };
 

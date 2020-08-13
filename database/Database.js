@@ -64,21 +64,22 @@ class Database {
   }
 
   static async saveUserBoughtSharesCollection(collection, token) {
-    let fields = collection.header.filter(
-      (label) => label != collection.header[1]
-    );
-    let header = { name: "shares", fields };
+    // let fields = collection.header.filter(
+    //   (label) => label != collection.header[1]
+    // );
+    let header = { name: "shares", fields: collection.header };
     await this.saveBoughtSharesHeader(header);
     let userId = await getUserIdFromToken(token);
-    let shares = [];
-    collection.shares.forEach((share) => {
-      let data = Object.values(share)[0]; // {isin:data} model
-      let shareScheme = {
-        name: Object.keys(share)[0],
-        params: data.slice(1), //cut down the name of company, data[0], from the rest of data
-      };
-      shares.push(shareScheme);
-    });
+    // let shares = [];
+    // collection.shares.forEach((share) => {
+    //   let data = Object.values(share)[0]; // {isin:data} model
+    //   let shareScheme = {
+    //     name: Object.keys(share)[0],
+    //     params: data.slice(1), //cut down the name of company, data[0], from the rest of data
+    //   };
+    //   shares.push(shareScheme);
+    // });
+    let shares = collection.shares;
     let userSharesScheme = { userId, shares };
     await this.saveUserBoughtShares(userSharesScheme);
     return "List of user's bought shares has been updated!";
@@ -200,7 +201,6 @@ class Database {
   //Buy/Sell Shares
   //----------------------
   static async tradeShares(formData, token, type) {
-    console.log(formData, token, type);
     let result = await GPWTScrapper.performAction(type, token, formData);
     return result;
   }

@@ -16,10 +16,11 @@ const sharesRoute = require("./routes/boughtShares");
 const credentialsRoute = require("./routes/credentials");
 const updateRoute = require("./routes/update");
 const userStatusRoute = require("./routes/status");
+const tradeRoute = require("./routes/trade");
 
 //SETUP
 Database.connectToDatabase("mongodb://127.0.0.1:27017/gpwtrader");
-puppeteer.launch({ headless: true }).then((browser) => {
+puppeteer.launch({ headless: false }).then((browser) => {
   GPWTScrapper.setDefaultBrowser(browser);
 });
 
@@ -38,6 +39,7 @@ app.use("/shares", sharesRoute);
 app.use("/credentials", credentialsRoute);
 app.use("/update", updateRoute);
 app.use("/status", userStatusRoute);
+app.use("/trade", tradeRoute);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

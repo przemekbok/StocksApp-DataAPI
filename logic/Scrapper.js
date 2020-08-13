@@ -12,39 +12,20 @@ const CredentialsModel = require("../models/User/UserGPWTCredentials");
 class GPWTScrapper {
   static #isGlobalBrowserSet = false;
   static #page;
-  static #lastUser = {
-    userId: null,
-    status: {},
-  };
 
-  static async performAction(actionName, token) {
+  static async performAction(actionName, token, data) {
     if (this.#isGlobalBrowserSet) {
       try {
         let userId = getUserIdFromToken(token);
-        //check if there was a previous user
-        // if (this.#lastUser.userId != userId && this.#lastUser.userId != null) {
-        //   //if were - logout
-        //   this.#logOut();
-        //   this.#page.close();
-        // }
-        //check if there was a previous user, we are assuming that if he were then he is logged out
-        // if (this.#lastUser.userId != userId) {
-
-        // }
-        //if were - log in
         let credentials = await this.#getCredentials(userId);
         let loginResult = await this.#logIn(credentials);
-        //after succesful login write down current user id and his account status
-        //.#lastUser.userId = userId;
-        // if (result) {
-        //   this.#lastUser.status = await this.#scrapAccountStatus();
-        // }
-        let result = await this.#performActualAction(actionName);
+        let result = await this.#performActualAction(actionName, data);
         await this.#logOut();
         this.#page.close();
         return result;
       } catch (err) {
         console.log("\nError:\n", err);
+        await this.#logOut();
         this.#page.close();
         //await this.performAction(actionName, token);
       }
@@ -106,7 +87,7 @@ class GPWTScrapper {
     await this.#page.click(".logout > a");
   };
 
-  static #performActualAction = async (actionName) => {
+  static #performActualAction = async (actionName, data) => {
     switch (actionName) {
       case "GET-COMPANIES":
         return await this.#scrapCompanies();
@@ -114,6 +95,10 @@ class GPWTScrapper {
         return await this.#scrapUserBoughtShares();
       case "UPDATE-ALL":
         return await this.#scrapAllUserRelatedData();
+      case "BUY-SHARES":
+        return await this.#tradeShares(data, actionName);
+      case "SELL-SHARES":
+        return await this.#tradeShares(data, actionName);
       default:
         console.log("This action is not supported!");
     }
@@ -218,17 +203,45 @@ class GPWTScrapper {
     return { header, shares };
   };
 
-  //TODO rethink this getter, kinda pointless if
-  static #getAccountStatus = () => {
-    if (this.#lastUser.userId != null) {
-      return this.#lastUser.status;
-    } else {
-      return {
-        resources: 0,
-        wallet: 0,
-        rate: "0%",
-      };
-    }
+  static #tradeShares = async (formData, type) => {
+    await this.#page.goto("https://gpwtrader.pl/exchange-order");
+    await this.#page.evaluate((formData) => {
+      if (type === "BUY-SHARES") {
+        document.querySelector(".button-kupno > a").click();
+      } else if (type === "SELL-SHARES") {
+        document.querySelector(".button-sprzedaz > a").click();
+      }
+      Object.keys(formData).forEach((key) => {
+        if (formData[key] !== "") {
+          let tagName = document.querySelector(`#${key}`).tagName;
+          if (tagName === "SELECT") {
+            let option = document.querySelector(
+              `#${key} > [value='${formData[key]}']`
+            );
+            console.log(option);
+            option.selected = true;
+          } else if (tagName === "INPUT") {
+            document.querySelector(`#${key}`).value = formData[key];
+          }
+        }
+      });
+      document.querySelector(".button-zlecenie > a").click();
+    }, formData);
+    await this.#page.waitForNavigation();
+    await this.#page.evaluate(() => {
+      document.querySelector(".button-zlecenie > a").click();
+    });
+    await this.#page.waitForNavigation();
+    let result = await this.#page.evaluate(() => {
+      let errorElement = document.querySelector(".form-error");
+      let errorMessage = errorElement ? errorElement.textContent : "";
+      if (errorMessage !== "") {
+        return { result: false, errorMessage };
+      } else {
+        return { result: true, errorMessage: "" };
+      }
+    });
+    return result;
   };
 
   static #openPage = async () => {

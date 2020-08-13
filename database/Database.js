@@ -91,7 +91,7 @@ class Database {
     let userStatus = await UserStatus.findOne({ userId });
     //sanitizing object
     return {
-      userId: userId,
+      userId: userStatus.userId,
       resources: userStatus.resources,
       wallet: userStatus.wallet,
       rate: userStatus.rate,
@@ -194,6 +194,15 @@ class Database {
       const userSharesHeader = new ShareHeader(header);
       await userSharesHeader.save();
     }
+  }
+  //----------------------
+
+  //Buy/Sell Shares
+  //----------------------
+  static async tradeShares(formData, token, type) {
+    console.log(formData, token, type);
+    let result = await GPWTScrapper.performAction(type, token, formData);
+    return result;
   }
   //----------------------
 }

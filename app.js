@@ -17,10 +17,14 @@ const credentialsRoute = require("./routes/credentials");
 const updateRoute = require("./routes/update");
 const userStatusRoute = require("./routes/status");
 const tradeRoute = require("./routes/trade");
+const dotenv = require("dotenv");
 
+dotenv.config();
 //SETUP
-Database.connectToDatabase("mongodb://127.0.0.1:27017/gpwtrader");
-puppeteer.launch({ headless: false }).then((browser) => {
+Database.connectToDatabase(
+  `mongodb://${process.env.LOGIN}:${process.env.PASSWORD}@127.0.0.1:27017/gpwtrader`
+);
+puppeteer.launch({ headless: true }).then((browser) => {
   GPWTScrapper.setDefaultBrowser(browser);
 });
 

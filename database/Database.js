@@ -22,8 +22,9 @@ class Database {
     });
 
     const db = mongoose.connection;
+    const sanitizedUrl = url.split("@")[1];
     db.once("open", () => {
-      console.log("Database connected:", url);
+      console.log("Database connected:", sanitizedUrl);
     });
 
     db.on("error", (err) => {

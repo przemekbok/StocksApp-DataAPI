@@ -22,7 +22,7 @@ const dotenv = require("dotenv");
 dotenv.config();
 //SETUP
 Database.connectToDatabase(
-  `mongodb://${process.env.LOGIN}:${process.env.PASSWORD}@127.0.0.1:27017/gpwtrader`
+  `mongodb+srv://${process.env.LOGIN}:${process.env.PASSWORD}@gpwtrader.ok87b.mongodb.net/gpwtrader?retryWrites=true&w=majority`
 );
 puppeteer.launch({ headless: true }).then((browser) => {
   GPWTScrapper.setDefaultBrowser(browser);

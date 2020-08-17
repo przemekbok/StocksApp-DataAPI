@@ -3,7 +3,6 @@ const router = express.Router();
 const { Database } = require("../database/Database");
 const { userSharesToJSON } = require("../logic/MongoObjToJSON");
 
-//test
 router.get("/", (req, res, next) => {
   let token = req.header("Authorization");
   if (token === undefined) {

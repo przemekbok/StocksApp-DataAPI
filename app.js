@@ -24,9 +24,14 @@ dotenv.config();
 Database.connectToDatabase(
   `mongodb+srv://${process.env.LOGIN}:${process.env.PASSWORD}@gpwtrader.ok87b.mongodb.net/gpwtrader?retryWrites=true&w=majority`
 );
-puppeteer.launch({ headless: true }).then((browser) => {
-  GPWTScrapper.setDefaultBrowser(browser);
-});
+puppeteer
+  .launch({
+    headless: true,
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  })
+  .then((browser) => {
+    GPWTScrapper.setDefaultBrowser(browser);
+  });
 
 var app = express();
 

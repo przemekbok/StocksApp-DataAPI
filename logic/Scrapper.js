@@ -255,6 +255,7 @@ class GPWTScrapper {
     await page.setUserAgent(
       "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:75.0) Gecko/20100101 Firefox/75.0"
     );
+    await page.setDefaultNavigationTimeout(0);
 
     return page;
   };

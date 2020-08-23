@@ -21,9 +21,14 @@ const dotenv = require("dotenv");
 
 dotenv.config();
 //SETUP
-Database.connectToDatabase(
-  `mongodb+srv://${process.env.LOGIN}:${process.env.PASSWORD}@gpwtrader.ok87b.mongodb.net/gpwtrader?retryWrites=true&w=majority`
-);
+if (process.env.LOGIN && process.env.PASSWORD) {
+  Database.connectToDatabase(
+    `mongodb+srv://${process.env.LOGIN}:${process.env.PASSWORD}@gpwtrader.ok87b.mongodb.net/gpwtrader?retryWrites=true&w=majority`
+  );
+} else {
+  Database.connectToDatabase("mongodb://127.0.0.1:27017/gpwtrader");
+}
+
 puppeteer
   .launch({
     headless: true,

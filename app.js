@@ -20,13 +20,19 @@ const tradeRoute = require("./routes/trade");
 const dotenv = require("dotenv");
 
 dotenv.config();
+//if no configured address then try to use local db
+const ADDRESS = process.env.ADDRESS
+  ? process.env.ADDRESS
+  : "127.0.0.1:27017/gpwtrader";
 //SETUP
 if (process.env.LOGIN && process.env.PASSWORD) {
   Database.connectToDatabase(
-    `mongodb+srv://${process.env.LOGIN}:${process.env.PASSWORD}@gpwtrader.ok87b.mongodb.net/gpwtrader?retryWrites=true&w=majority`
+    `mongodb${process.env.ADDRESS ? "+srv" : ""}://${process.env.LOGIN}:${
+      process.env.PASSWORD
+    }@${ADDRESS}`
   );
 } else {
-  Database.connectToDatabase("mongodb://127.0.0.1:27017/gpwtrader");
+  Database.connectToDatabase(`mongodb://${ADDRESS}`);
 }
 
 puppeteer

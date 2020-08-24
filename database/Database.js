@@ -91,18 +91,22 @@ class Database {
   static async getUserStatus(token) {
     let userId = await getUserIdFromToken(token);
     let userStatus = await UserStatus.findOne({ userId });
+    if (userStatus !== null) {
+      return {
+        userId: userStatus.userId,
+        resources: userStatus.resources,
+        wallet: userStatus.wallet,
+        rate: userStatus.rate,
+      };
+    } else {
+      return false;
+    }
     //sanitizing object
-    return {
-      userId: userStatus.userId,
-      resources: userStatus.resources,
-      wallet: userStatus.wallet,
-      rate: userStatus.rate,
-    };
   }
 
   static async saveUserStatus(status, token) {
     let userId = await getUserIdFromToken(token);
-    let userStatus = await UserStatus.findOne();
+    let userStatus = await UserStatus.findOne({ userId });
     if (userStatus !== null) {
       userStatus._doc = { ...userStatus._doc, ...status };
       await userStatus.save();

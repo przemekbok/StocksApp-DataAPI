@@ -93,7 +93,6 @@ class Database {
     let userStatus = await UserStatus.findOne({ userId });
     if (userStatus !== null) {
       return {
-        userId: userStatus.userId,
         resources: userStatus.resources,
         wallet: userStatus.wallet,
         rate: userStatus.rate,

@@ -13,7 +13,7 @@ router.get("/", (req, res, next) => {
       if (credentials.email === "") {
         let errorMessage = "Authentication failed";
         res
-          .status(403)
+          .status(401)
           .type("application/json")
           .send(JSON.stringify(errorMessage));
       } else {

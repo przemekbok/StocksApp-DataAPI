@@ -11,7 +11,7 @@ router.post("/buy", (req, res, next) => {
   let token = req.header("Authorization");
   if (token === undefined) {
     let errorMessge = "Unauthorized!";
-    res.status(403).send(JSON.stringify({ errorMessge }));
+    res.status(401).send(JSON.stringify({ errorMessge }));
   } else {
     let formData = req.body;
     Database.tradeShares(formData, token, "BUY-SHARES").then((response) => {
@@ -24,7 +24,7 @@ router.post("/sell", (req, res, next) => {
   let token = req.header("Authorization");
   if (token === undefined) {
     let errorMessge = "Unauthorized!";
-    res.status(403).send(JSON.stringify({ errorMessge }));
+    res.status(401).send(JSON.stringify({ errorMessge }));
   } else {
     let formData = req.body;
     Database.tradeShares(formData, token, "SELL-SHARES").then((response) => {

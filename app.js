@@ -19,7 +19,7 @@ const userStatusRoute = require("./routes/status");
 const tradeRoute = require("./routes/trade");
 const dotenv = require("dotenv");
 
-dotenv.config();
+dotenv.config({ path: `${__dirname}\.env` });
 //if no configured address then try to use local db
 const ADDRESS = process.env.ADDRESS
   ? process.env.ADDRESS

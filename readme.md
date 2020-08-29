@@ -2,16 +2,8 @@
 
 ## TODO:
 * :ballot_box_with_check: ~~make a readme~~
-* :black_square_button: directories cleanup
-* :black_square_button: welcome screen with app info
-* :black_square_button: all data to state
-* :black_square_button: get state then load an app
-* :black_square_button: modals provided via react providers
-* :black_square_button: modals bugs repairs
-* :black_square_button: waiting indicator for all pages
-* :black_square_button: finish forms validation with formik
-* :black_square_button: registration page with additional data
-* :black_square_button: RWD
-*...
+* :black_square_button: resolve npm audit warning for dependencies
+* :black_square_button: try to remove puppeteer form project with internal GPWTrader api calls
+* ...
 
 
